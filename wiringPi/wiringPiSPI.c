@@ -122,7 +122,8 @@ int wiringPiSPIGetFd(int channel)
  *********************************************************************************
  */
 
-int wiringPiSPIxDataRW(const int number, const int channel, unsigned char *tx_buf, unsigned char *rx_buf, const int len)
+int wiringPiSPIxDataRW(const int number, const int channel, const unsigned char *tx_buf,
+                       unsigned char *rx_buf, const int len)
 {
 
   RETURN_ON_LIMIT_FAIL
@@ -157,7 +158,7 @@ int wiringPiSPIDataR(int channel, unsigned char *data, int len)
   return wiringPiSPIxDataRW(0, channel, NULL, data, len);
 }
 
-int wiringPiSPIDataW(int channel, unsigned char *data, int len)
+int wiringPiSPIDataW(int channel, const unsigned char *data, int len)
 {
   return wiringPiSPIxDataRW(0, channel, data, NULL, len);
 }
