@@ -23,23 +23,24 @@
  */
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
+    int wiringPiSPIGetFd(int channel);
+    int wiringPiSPIDataRW(int channel, unsigned char *data, int len);
+    int wiringPiSPIDataR(int channel, unsigned char *data, int len);
+    int wiringPiSPIDataW(int channel, unsigned char *data, int len);
+    int wiringPiSPISetupMode(int channel, int speed, int mode);
+    int wiringPiSPISetup(int channel, int speed);
+    int wiringPiSPIClose(const int channel); // Interface 3.5
 
-
-int wiringPiSPIGetFd     (int channel) ;
-int wiringPiSPIDataRW    (int channel, unsigned char *data, int len) ;
-int wiringPiSPISetupMode (int channel, int speed, int mode) ;
-int wiringPiSPISetup     (int channel, int speed) ;
-int wiringPiSPIClose     (const int channel); //Interface 3.5
-
-//Interface 3.5
-int wiringPiSPIxGetFd     (const int number, const int channel) ;
-int wiringPiSPIxDataRW    (const int number, const int channel, unsigned char *data, const int len) ;
-int wiringPiSPIxSetupMode (const int number, const int channel, const int speed, const int mode) ;
-int wiringPiSPIxSetup     (const int number, const int channel, const int speed) ;
-int wiringPiSPIxClose     (const int number, const int channel);
+    // Interface 3.5
+    int wiringPiSPIxGetFd(const int number, const int channel);
+    int wiringPiSPIxDataRW(const int number, const int channel, unsigned char *tx_buf, unsigned char *rx_buf, const int len);
+    int wiringPiSPIxSetupMode(const int number, const int channel, const int speed, const int mode);
+    int wiringPiSPIxSetup(const int number, const int channel, const int speed);
+    int wiringPiSPIxClose(const int number, const int channel);
 
 #ifdef __cplusplus
 }
