@@ -437,6 +437,10 @@ static int wiringPiMode = WPI_MODE_UNINITIALISED;
 static volatile int pinPass = -1;
 static pthread_mutex_t pinMutex;
 
+static pthread_mutex_t isrMutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t isrCond = PTHREAD_COND_INITIALIZER;
+static bool isrStarted = false;
+
 static int RaspberryPiModel = -1;
 static int RaspberryPiLayout = -1;
 
@@ -4530,6 +4534,12 @@ struct interrupt_handler_params
 
 static void *interruptHandlerV2(void *arg)
 {
+  // signal to wiringPiISRInternal that our thread has started and it can return
+  pthread_mutex_lock(&isrMutex);
+  isrStarted = true;
+  pthread_cond_signal(&isrCond);
+  pthread_mutex_unlock(&isrMutex);
+
   struct interrupt_handler_params *params;
   int pin, ret, fd, i;
   unsigned int readret;
@@ -4706,11 +4716,39 @@ int wiringPiISRInternal(int pin, int edgeMode, void (*function)(struct WPIWfiSta
     {
       printf("wiringPi: pthread_create before 0x%lX\n", (unsigned long)isrThreads[pin]);
     }
+    pthread_mutex_lock(&isrMutex);
+    isrStarted = false;
     if (pthread_create(&isrThreads[pin], NULL, interruptHandlerV2, &params) == 0)
     {
       if (wiringPiDebug)
       {
         printf("wiringPi: pthread_create successed, 0x%lX\n", (unsigned long)isrThreads[pin]);
+      }
+      // wait so that interruptHandler is up und running.
+      // when interruptHandler is running, the calling function wiringPiISRInternal
+      // must be still alive, otherwise the thread argument &param points into nirwana,
+      // when it is picked up from interruptHandlerV2.
+      struct timespec ts;
+      clock_gettime(CLOCK_REALTIME, &ts);
+      // Add 10 ms (10,000,000 nanoseconds)
+      ts.tv_nsec += 10 * 1000000;
+      if (ts.tv_nsec >= 1000000000L) {
+          ts.tv_sec += 1;
+          ts.tv_nsec -= 1000000000L;
+      }
+      int isrWait = 0;
+      while (!isrStarted && isrWait != ETIMEDOUT)
+      {
+        isrWait = pthread_cond_timedwait(&isrCond, &isrMutex, &ts);
+      }
+      if (isrWait == ETIMEDOUT)
+      {
+        if (wiringPiDebug)
+        {
+          printf("wiringPi: pthread_create failed (timed out)\n");
+        }
+        pthread_mutex_unlock(&isrMutex);
+        return wiringPiFailure(WPI_ALMOST, "wiringPiISRInternal: ISR thread for pin %d failed to start up within 10ms\n", pin);
       }
     }
     else
@@ -4720,11 +4758,7 @@ int wiringPiISRInternal(int pin, int edgeMode, void (*function)(struct WPIWfiSta
         printf("wiringPi: pthread_create failed\n");
       }
     }
-    // wait so that interruptHandler is up und running.
-    // when interruptHandler is running, the calling function wiringPiISRInternal
-    // must be still alive, otherwise the thread argument &param points into nirwana,
-    // when it is picked up from interruptHandlerV2.
-    delay(10);
+    pthread_mutex_unlock(&isrMutex);
   }
 
   if (wiringPiDebug)
