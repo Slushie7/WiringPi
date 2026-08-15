@@ -4555,7 +4555,7 @@ static void *interruptHandlerV2(void *arg)
   /* set event fd  */
   isrFds[pin] = fd;
 
-  (void)piHiPri(55); // Only effective if we run as root
+  // (void)piHiPri(55); // Set thread priority
 
   for (;;)
   { // check if event data is available, check if interruptHandlerV2 thread must be canceled
@@ -4732,9 +4732,10 @@ int wiringPiISRInternal(int pin, int edgeMode, void (*function)(struct WPIWfiSta
       clock_gettime(CLOCK_REALTIME, &ts);
       // Add 10 ms (10,000,000 nanoseconds)
       ts.tv_nsec += 10 * 1000000;
-      if (ts.tv_nsec >= 1000000000L) {
-          ts.tv_sec += 1;
-          ts.tv_nsec -= 1000000000L;
+      if (ts.tv_nsec >= 1000000000L)
+      {
+        ts.tv_sec += 1;
+        ts.tv_nsec -= 1000000000L;
       }
       int isrWait = 0;
       while (!isrStarted && isrWait != ETIMEDOUT)
