@@ -148,6 +148,16 @@ int wiringPiSPIxDataRW(const int number, const int channel, const unsigned char 
   return ioctl(spiFds[number][channel], SPI_IOC_MESSAGE(1), &spi);
 }
 
+int wiringPiSPIxDataR(int number, int channel, unsigned char *data, int len)
+{
+  return wiringPiSPIxDataRW(number, channel, NULL, data, len);
+}
+
+int wiringPiSPIxDataW(int number, int channel, const unsigned char *data, int len)
+{
+  return wiringPiSPIxDataRW(number, channel, data, NULL, len);
+}
+
 int wiringPiSPIDataRW(int channel, unsigned char *data, int len)
 {
   return wiringPiSPIxDataRW(0, channel, data, data, len);
@@ -155,12 +165,12 @@ int wiringPiSPIDataRW(int channel, unsigned char *data, int len)
 
 int wiringPiSPIDataR(int channel, unsigned char *data, int len)
 {
-  return wiringPiSPIxDataRW(0, channel, NULL, data, len);
+  return wiringPiSPIxDataR(0, channel, data, len);
 }
 
 int wiringPiSPIDataW(int channel, const unsigned char *data, int len)
 {
-  return wiringPiSPIxDataRW(0, channel, data, NULL, len);
+  return wiringPiSPIxDataW(0, channel, data, len);
 }
 
 /*

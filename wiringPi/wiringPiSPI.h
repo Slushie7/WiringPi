@@ -38,6 +38,8 @@ extern "C"
     // Interface 3.5
     int wiringPiSPIxGetFd(const int number, const int channel);
     int wiringPiSPIxDataRW(const int number, const int channel, const unsigned char *tx_buf, unsigned char *rx_buf, const int len);
+    int wiringPiSPIxDataR(int number, int channel, unsigned char *data, int len);
+    int wiringPiSPIxDataW(int number, int channel, const unsigned char *data, int len);
     int wiringPiSPIxSetupMode(const int number, const int channel, const int speed, const int mode);
     int wiringPiSPIxSetup(const int number, const int channel, const int speed);
     int wiringPiSPIxClose(const int number, const int channel);
