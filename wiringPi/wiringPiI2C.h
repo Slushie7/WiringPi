@@ -22,7 +22,9 @@
  ***********************************************************************
  */
 
-#include <stdbool.h>
+#ifndef __WIRING_PI_I2C_H__
+#define __WIRING_PI_I2C_H__
+
 #include <stdint.h>
 
 #ifdef __cplusplus
@@ -32,7 +34,7 @@ extern "C"
 
     typedef struct
     {
-        bool success;
+        int error_code;
         uint16_t value;
     } I2C_RESPONSE;
 
@@ -58,3 +60,5 @@ extern "C"
 #ifdef __cplusplus
 }
 #endif
+
+#endif // __WIRING_PI_I2C_H__

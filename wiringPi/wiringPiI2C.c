@@ -182,12 +182,12 @@ I2C_RESPONSE wiringPiI2CTryRead(int fd)
 
   if (i2c_smbus_access(fd, I2C_SMBUS_READ, 0, I2C_SMBUS_BYTE, &data))
   {
-    response.success = FALSE;
+    response.error_code = errno;
     response.value = 0;
   }
   else
   {
-    response.success = TRUE;
+    response.error_code = 0;
     response.value = data.byte & 0xFF;
   }
 
@@ -207,12 +207,12 @@ I2C_RESPONSE wiringPiI2CTryReadReg8(int fd, int reg)
 
   if (i2c_smbus_access(fd, I2C_SMBUS_READ, reg, I2C_SMBUS_BYTE_DATA, &data))
   {
-    response.success = FALSE;
+    response.error_code = errno;
     response.value = 0;
   }
   else
   {
-    response.success = TRUE;
+    response.error_code = 0;
     response.value = data.byte & 0xFF;
   }
 
@@ -226,12 +226,12 @@ I2C_RESPONSE wiringPiI2CTryReadReg16(int fd, int reg)
 
   if (i2c_smbus_access(fd, I2C_SMBUS_READ, reg, I2C_SMBUS_WORD_DATA, &data))
   {
-    response.success = FALSE;
+    response.error_code = errno;
     response.value = 0;
   }
   else
   {
-    response.success = TRUE;
+    response.error_code = 0;
     response.value = data.word & 0xFFFF;
   }
 
