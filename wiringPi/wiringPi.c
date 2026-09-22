@@ -985,7 +985,8 @@ int piBoard()
   if (RaspberryPiModel < 0)
   { // need to detect pi model
     int model, rev, mem, maker, overVolted;
-    piBoardId(&model, &rev, &mem, &maker, &overVolted);
+    if (!piBoardId(&model, &rev, &mem, &maker, &overVolted))
+      return -1;
   }
   return RaspberryPiModel < 0 ? 0 : 1;
 }
@@ -2123,9 +2124,7 @@ int wiringPiFailure(int fatal, const char *message, ...)
   va_end(argp);
 
   fprintf(stderr, "%s", buffer);
-  exit(EXIT_FAILURE);
-
-  return 0;
+  return -1;
 }
 
 /*
@@ -2135,15 +2134,16 @@ int wiringPiFailure(int fatal, const char *message, ...)
  *********************************************************************************
  */
 
-static void setupCheck(const char *fName)
+static bool setupCheck(const char *fName)
 {
   if (!wiringPiSetuped)
   {
     fprintf(stderr, "%s: You have not called one of the wiringPiSetup\n"
                     "  functions, so I'm aborting your program before it crashes anyway.\n",
             fName);
-    exit(EXIT_FAILURE);
+    return false;
   }
+  return true;
 }
 
 /*
@@ -2153,13 +2153,14 @@ static void setupCheck(const char *fName)
  *********************************************************************************
  */
 
-static void usingGpioMemCheck(const char *what)
+static bool usingGpioMemCheck(const char *what)
 {
   if (usingGpioMem)
   {
     fprintf(stderr, "%s: Unable to do this when using /dev/gpiomem. Try sudo?\n", what);
-    exit(EXIT_FAILURE);
+    return false;
   }
+  return true;
 }
 
 void PrintSystemStdErr()
@@ -2193,7 +2194,6 @@ void piFunctionOops(const char *function, const char *suggestion, const char *ur
     fprintf(stderr, " -> See info at %s\n", url);
   }
   fprintf(stderr, " -> Check at https://github.com/wiringpi/wiringpi/issues.\n\n");
-  exit(EXIT_FAILURE);
 }
 
 void ReportDeviceError(const char *function, int pin, const char *mode, int ret)
@@ -2234,7 +2234,6 @@ void piGpioLayoutOops(const char *why)
   fprintf(stderr, " -> %s\n", why);
   fprintf(stderr, " -> WiringPi is designed for Raspberry Pi and can only be used with a Raspberry Pi.\n\n");
   fprintf(stderr, " -> Check at https://github.com/wiringpi/wiringpi/issues.\n\n");
-  exit(EXIT_FAILURE);
 }
 
 int piGpioLayout(void)
@@ -2352,15 +2351,13 @@ const char *GetPiRevision(char *line, int linelength, unsigned int *revision)
  *********************************************************************************
  */
 
-void piBoardId(int *model, int *rev, int *mem, int *maker, int *warranty)
+bool piBoardId(int *model, int *rev, int *mem, int *maker, int *warranty)
 {
   const int maxlength = 120;
   char line[maxlength + 1];
   const char *c;
   unsigned int revision = 0x00;
   int bRev, bType, bProc, bMfg, bMem, bWarranty;
-
-  // piGpioLayoutOops ("this is only a test case");
 
   c = GetPiRevision(line, maxlength, &revision); // device tree
   if (NULL == c)
@@ -2370,6 +2367,7 @@ void piBoardId(int *model, int *rev, int *mem, int *maker, int *warranty)
   if (NULL == c)
   {
     piGpioLayoutOops("GetPiRevision failed!");
+    return false;
   }
 
   if ((revision & (1 << 23)) != 0) // New style, not available for Raspberry Pi 1B/A, CM
@@ -2402,12 +2400,18 @@ void piBoardId(int *model, int *rev, int *mem, int *maker, int *warranty)
       printf("piBoardId: Old Way: revision is: %s\n", c);
 
     if (!isdigit(*c))
+    {
       piGpioLayoutOops("Bogus \"Revision\" line (no digit at start of revision)");
+      return false;
+    }
 
     // Make sure its long enough
 
     if (strlen(c) < 4)
+    {
       piGpioLayoutOops("Bogus \"Revision\" line (not long enough)");
+      return false;
+    }
 
     // If longer than 4, we'll assume it's been overvolted
 
@@ -2635,6 +2639,8 @@ void piBoardId(int *model, int *rev, int *mem, int *maker, int *warranty)
     piGpioPupOffset = GPPUD;
     break;
   }
+
+  return true;
 }
 
 /*
@@ -3302,7 +3308,8 @@ int requestLineV2(int pin, const unsigned int lineRequestFlags)
 
 void pinModeAlt(int pin, int mode)
 {
-  setupCheck("pinModeAlt");
+  if (!setupCheck("pinModeAlt"))
+    return;
 
   if (!ToBCMPin(&pin))
   {
@@ -3417,7 +3424,8 @@ void pinMode(int pin, int mode)
   if (wiringPiDebug)
     printf("pinMode: pin:%d mode:%d\n", pin, mode);
 
-  setupCheck("pinMode");
+  if (!setupCheck("pinMode"))
+    return;
 
   if ((pin & PI_GPIO_MASK) == 0) // On-board pin
   {
@@ -3515,7 +3523,9 @@ void pinMode(int pin, int mode)
     else if (PWM_OUTPUT == mode || PWM_MS_OUTPUT == mode || PWM_BAL_OUTPUT == mode)
     {
 
-      usingGpioMemCheck("pinMode PWM"); // exit on error!
+      if (!usingGpioMemCheck("pinMode PWM"))
+        return;
+
       alt = gpioToPwmALT[pin];
       if (0 == alt)
       { // Not a hardware capable PWM pin
@@ -3564,7 +3574,8 @@ void pinMode(int pin, int mode)
       if ((alt = gpioToGpClkALT0[pin]) == 0) // Not a GPIO_CLOCK pin
         return;
 
-      usingGpioMemCheck("pinMode CLOCK");
+      if (!usingGpioMemCheck("pinMode CLOCK"))
+        return;
 
       // Set pin to GPIO_CLOCK mode and set the clock frequency to 100KHz
 
@@ -3626,7 +3637,8 @@ void pullUpDnControl(int pin, int pud)
 {
   struct wiringPiNodeStruct *node = wiringPiNodes;
 
-  setupCheck("pullUpDnControl");
+  if (!setupCheck("pullUpDnControl"))
+    return;
 
   if ((pin & PI_GPIO_MASK) == 0) // On-Board Pin
   {
@@ -3939,7 +3951,8 @@ void pwmWrite(int pin, int value)
 {
   struct wiringPiNodeStruct *node = wiringPiNodes;
 
-  setupCheck("pwmWrite");
+  if (!setupCheck("pwmWrite"))
+    return;
 
   if ((pin & PI_GPIO_MASK) == 0) // On-Board Pin
   {
@@ -3953,7 +3966,9 @@ void pwmWrite(int pin, int value)
       value = (OSC_FREQ_BCM2711*value)/OSC_FREQ_DEFAULT;
     }
     */
-    usingGpioMemCheck("pwmWrite");
+    if (!usingGpioMemCheck("pwmWrite"))
+      return;
+
     int channel = gpioToPwmPort[pin];
     int readback = 0x00;
     if (piRP1Model())
@@ -4031,7 +4046,8 @@ void analogWrite(int pin, int value)
 
 void pwmToneWrite(int pin, int freq)
 {
-  setupCheck("pwmToneWrite");
+  if (!setupCheck("pwmToneWrite"))
+    return;
 
   if (freq == 0)
     pwmWrite(pin, 0); // Off
@@ -5145,7 +5161,8 @@ int wiringPiSetup(void)
   //	and if we're running on a compute module, then wiringPi pin numbers
   //	don't really mean anything, so force native BCM mode anyway.
 
-  piBoardId(&model, &rev, &mem, &maker, &overVolted);
+  if (!piBoardId(&model, &rev, &mem, &maker, &overVolted))
+    return -1;
 
   if ((model == PI_MODEL_CM) ||
       (model == PI_MODEL_CM3) ||
