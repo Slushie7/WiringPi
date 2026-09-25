@@ -2113,6 +2113,7 @@ static uint8_t gpioToClkDiv[] =
 
 int wiringPiFailure(int fatal, const char *message, ...)
 {
+  int saved_errno = errno;
   va_list argp;
   char buffer[1024];
 
@@ -2124,6 +2125,7 @@ int wiringPiFailure(int fatal, const char *message, ...)
   va_end(argp);
 
   fprintf(stderr, "%s", buffer);
+  errno = saved_errno; // restore errno
   return -1;
 }
 
