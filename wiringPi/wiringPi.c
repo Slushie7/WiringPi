@@ -4691,12 +4691,14 @@ int wiringPiISRInternal(int pin, int edgeMode, void (*function)(struct WPIWfiSta
 {
   if (wiringPiMode == WPI_MODE_UNINITIALISED)
   {
+    errno = ESRCH;
     return wiringPiFailure(WPI_FATAL, "wiringPiISR: wiringPi has not been initialised. Unable to continue.\n");
   }
   if (!ToBCMPin(&pin))
   {
     fprintf(stderr, "wiringPiISRStop: wrong pin %d (mode: %d) number!\n", pin, wiringPiMode);
-    return EINVAL;
+    errno = EINVAL;
+    return -EINVAL;
   }
   if (wiringPiDebug)
   {
@@ -4769,6 +4771,7 @@ int wiringPiISRInternal(int pin, int edgeMode, void (*function)(struct WPIWfiSta
           printf("wiringPi: pthread_create failed (timed out)\n");
         }
         pthread_mutex_unlock(&isrMutex);
+        errno = ETIMEDOUT;
         return wiringPiFailure(WPI_ALMOST, "wiringPiISRInternal: ISR thread for pin %d failed to start up within 10ms\n", pin);
       }
     }
