@@ -5166,7 +5166,10 @@ int wiringPiSetup(void)
   //	don't really mean anything, so force native BCM mode anyway.
 
   if (!piBoardId(&model, &rev, &mem, &maker, &overVolted))
+  {
+    errno = EPERM;
     return -1;
+  }
 
   if ((model == PI_MODEL_CM) ||
       (model == PI_MODEL_CM3) ||
@@ -5363,7 +5366,8 @@ int wiringPiSetup(void)
 
 int wiringPiSetupGpio(void)
 {
-  (void)wiringPiSetup();
+  if (wiringPiSetup() != 0)
+    return -1;
 
   if (wiringPiDebug)
     printf("wiringPi: wiringPiSetupGpio called\n");
