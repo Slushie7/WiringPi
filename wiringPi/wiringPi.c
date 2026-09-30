@@ -4379,12 +4379,14 @@ int wiringPiISRStop(int pin)
 
   if (wiringPiMode == WPI_MODE_UNINITIALISED)
   {
+    errno = ESRCH;
     return wiringPiFailure(WPI_FATAL, "wiringPiISRStop: wiringPi has not been initialised. Unable to continue.\n");
   }
   if (!ToBCMPin(&pin))
   {
     fprintf(stderr, "wiringPiISRStop: wrong pin %d (mode: %d) number!\n", pin, wiringPiMode);
-    return EINVAL;
+    errno = EINVAL;
+    return -1;
   }
   if (wiringPiDebug)
   {
