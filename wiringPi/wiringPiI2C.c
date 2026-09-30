@@ -305,7 +305,9 @@ int wiringPiI2CSetupInterface(const char *device, int devId)
 
   if (ioctl(fd, I2C_SLAVE, devId) < 0)
   {
+    int err = errno; // preserve ioctl's errno, in clase close(fd) fails and overwrites it
     close(fd);
+    errno = err;
     return wiringPiFailure(WPI_ALMOST, "Unable to select I2C device: %s\n", strerror(errno));
   }
 

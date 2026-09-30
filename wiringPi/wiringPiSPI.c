@@ -188,6 +188,7 @@ int wiringPiSPIxSetupMode(const int number, const int channel, const int speed, 
   if (mode < 0 || mode > 3)
   { // Mode is 0, 1, 2 or 3 original
     fprintf(stderr, "wiringPiSPI: Invalid mode (%d, valid range 0-%d)", mode, 3);
+    errno = EINVAL;
     return -EINVAL;
   }
 
@@ -236,7 +237,6 @@ int wiringPiSPISetup(int channel, int speed)
 
 int wiringPiSPIxClose(const int number, const int channel)
 {
-
   RETURN_ON_LIMIT_FAIL
   if (spiFds[number][channel] > 0)
   {
