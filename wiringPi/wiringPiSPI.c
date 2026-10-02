@@ -211,7 +211,7 @@ int wiringPiSPIxSetupMode(const int number, const int channel, const int speed, 
   if (ioctl(fd, SPI_IOC_WR_MAX_SPEED_HZ, &speed) < 0)
     return wiringPiFailure(WPI_ALMOST, "SPI speed change failure: %s\n", strerror(errno));
 
-  return fd;
+  return 0;
 }
 
 int wiringPiSPISetupMode(int channel, int speed, int mode)
